@@ -23,15 +23,22 @@
 		var chartH = height - margin.top - margin.bottom;
 		var padding = 5;
 		var dataset = d3.json("classData.json")
-		var i = 1;
+		dataset.then(function(d){
+					drawChart(d,0)
+			},
+			function(err)
+			{
+			console.log(err)	
+			})
 //		var i = [1,2,3,4,5]
-		var quizes = dataset.map(d)
-		{
-			return d.quizes[i].grade
-		}
+		var drawChart = function(data,quizes){
 		var max = 40;
 		var min = 1;
-		var drawChart = function(data,quizes){
+		var quizes = dataset.map(function(d)
+		{
+			 console.log(d.quizes[1].grade)
+			
+		})
 		var svg = d3.select("body")
 					.selectAll("svg")
 					.attr("width",width + margin.left + margin.right)
@@ -57,12 +64,14 @@
 						   .data(quizes)	
 						   .enter()
 						   .append("rect")
-						   .attr("x",function(d,i)){
-						   return xScale(i)})
+						   .attr("x",function(d,i){
+						   return xScale()})
 						   .attr("y",function(d,i){
-							return yScale(i)
-						})
+							return yScale(i)})
+							
 		}
+	
 		</script>
+		 <svg width="600" height="500"></svg>
 		</body>
 		</html>
