@@ -2,76 +2,142 @@
 	<head>
 		<title>Penguin</title>
 		<meta charset="UTF-8">
-		<script src="https://d3js.org/d3.v5.min.js"></script>
+		<script type="text/javascript" src="d3.js"></script>
 		<style>
 		svg{
 				display: block;
+				margin-left: auto;
+  				margin-right: auto;
 				margin-bottom: 30px;
 			}
 		</style>
 		<body>
 		<script type = "text/javascript">
-		var margin ={
-			top:20,
-			bottom:20,
-			left:30,
-			right:80,
-		}
-		var width = 500; 
-		var height = 250;
-		var chartW = width - margin.left - margin.right;
-		var chartH = height - margin.top - margin.bottom;
-		var padding = 5;
-		var dataset = d3.json("classData.json")
-		dataset.then(function(d){
-					drawChart(d,0)
-			},
-			function(err)
-			{
-			console.log(err)	
-			})
-//		var i = [1,2,3,4,5]
-		var drawChart = function(data,quizes){
-		var max = 40;
-		var min = 1;
-		var quizes = dataset.map(function(d)
-		{
-			 console.log(d.quizes[1].grade)
-			
-		})
-		var svg = d3.select("body")
-					.selectAll("svg")
-					.attr("width",width + margin.left + margin.right)
-					.attr("height",height + margin.top + margin.bottom)
-	    /*scale*/
-		var xScale = d3.scaleLinear()
-					   .domain([0,10])
-					   .nice()
-					   .range([0,chartW]);
-		var yScale = d3.scaleLinear()
-					   .domain([0,40])
-					   .range([chartH,0])
-		var color = d3.scaleOrdinal(d3.schemeCategory10);
-		var binMaker = d3.histogram()
-						 .domain(xScale.domain())
-						 .thresholds(xScale.tick(50));
-		var bin = binMaker(quizes);
-		/*rectangular*/
-		var plotLand = svg.append("g")
-					  .classed("plot",true)
-					  .attr("transform","translate("+margin.left+","+margin.top+")");	
-		var rect = plotLand.selectAll("rect")
-						   .data(quizes)	
-						   .enter()
-						   .append("rect")
-						   .attr("x",function(d,i){
-						   return xScale()})
-						   .attr("y",function(d,i){
-							return yScale(i)})
-							
-		}
+			var loadData = d3.json("data.json");
+
+			var changeDay = function(data, day) {
+
+				var margin = {
+					top:20,
+					bottom:20,
+					left:30,
+					right:80,
+				}
+				var width = 500; 
+				var height = 500;
+				var chartW = width - margin.left - margin.right;
+				var chartH = height - margin.top - margin.bottom;
+				var padding = 5;
+
+				var quizes = data.map(function(d) {
+					 return d.quizes[day].grade;
+				})
+				var svg = d3.select("#chart")
+							.attr("width", width + 200)
+							.attr("height", height + 300);
+				svg.selectAll("*").remove();
 	
+			    /*scale*/
+				var xScale = d3.scaleLinear()
+							   .domain([0,11])
+							   .nice()
+							   .range([0,chartW]);
+				var binMaker = d3.histogram()
+					.domain(xScale.domain())
+					.thresholds(xScale.ticks(11));
+				var bins = binMaker(quizes);
+			    var max = d3.max(bins, function(d) {
+					return d.length;
+				})
+			    var yScale = d3.scaleLinear()
+					.domain([0, max])
+					.range([chartH, 0])
+					.nice();
+				var colors = d3.scaleOrdinal(d3.schemeSet3);				
+				/*rectangular*/
+				var plotLand = svg.append("g")
+							  .classed("plot",true)
+							  .attr("transform","translate("+margin.left+","+margin.top+")");	
+				var rect = plotLand.selectAll("rect")
+								   .data(bins)	
+								   .enter()
+								   .append("rect")
+								   .attr("fill", function (d) {
+										return colors(d);
+									})
+								   .attr("x",function(d){
+								   		return xScale(d.x0) + 50;
+									})
+								   .attr("y",function(d) {
+										return yScale(d.length) + 100;
+									})
+								   .attr("width", chartW / 11)
+								   .attr("height", function(d) {
+										return chartH - yScale(d.length);
+									});
+				var xAxis = d3.axisBottom()
+					.scale(xScale)
+					.ticks(11);
+				var yAxis = d3.axisLeft()
+					.scale(yScale)
+					.ticks(max);
+				svg.append("g")
+					.attr("id", "xAxis")
+					.call(xAxis)
+					.attr("transform", "translate(" + (margin.left + 50) + "," + (chartH + 100 + margin.top) + ")");
+				svg.append("g")
+					.attr("id", "yAxis")
+					.call(yAxis)
+					.attr("transform", "translate(" + (margin.left + 50) + "," + (100 + margin.top) + ")");
+
+
+				var svg = d3.select("#bar")
+							.attr("width", screen.width)
+							.attr("height", 100);
+				svg.selectAll("*").remove();
+				var newplot = svg
+					.append("g")
+					.attr("class", "days")
+					.selectAll("text")
+					.data(data[0].quizes)
+					.enter()
+					.append("text")
+					.text(function (d) {
+						return d.day;
+					})
+					.attr("x", function (d, i) {
+						return i * 30;
+					})
+					.attr("y", 50)
+					.on("mouseover", function(d) {
+						d3.select(this).attr("cursor", "pointer");
+					})
+					.on("click", function (d, i) {
+						loadData.then(function(data) {
+								changeDay(data, i);
+							} //day (i+1) - index i
+						)
+					});
+			}
+			loadData.then(function(data) {
+				changeDay(data, 0);
+			});
+	
+			// var buttonChangeDay = function(x){
+   //           var y = document.getElementById("someDay").innerText;
+   //           var index = y.indexOf(" ") + 1;
+   //           y = y.substring(index);
+   //           console.log(y);
+   //           var day = Number(y) + Number(x);
+   //           console.log(day);
+   //           loadData.then(function(data){
+   //             changeDay(data, day);
+   //           })
+   //          }
 		</script>
-		 <svg width="600" height="500"></svg>
-		</body>
-		</html>
+		<svg id="bar"></svg>
+		<svg id="chart"></svg>
+		<!-- <button onclick="buttonChangeDay(-1)" type="button" id="prev" disabled="true">PREV</button>
+      	<button onclick="buttonChangeDay(1)" type="button" id="next">NEXT</button><br> -->
+	</body>
+</html>
